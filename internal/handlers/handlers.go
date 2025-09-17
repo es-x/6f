@@ -29,7 +29,7 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 	r.ParseMultipartForm(10 << 20) // 10 MB
 
 	// получаем файл из формы
-	file, handler, err := r.FormFile("myFile")
+	file, _, err := r.FormFile("myFile")
 	if err != nil {
 		http.Error(w, "ошибка при получении файла", http.StatusBadRequest)
 		return
@@ -53,8 +53,7 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 			fmt.Printf("error convert: %s\n", err.Error())
 			return
 		}
-		fmt.Println(res)
-
+		io.WriteString(w, res)
 	}
 	nameFile := fmt.Sprintf("%s.log", time.Now().UTC().String())
 	resFile, err := os.OpenFile(nameFile, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0755)
@@ -67,20 +66,5 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 	_, err = resFile.WriteString(res)
 	if err != nil {
 		http.Error(w, "error write data", http.StatusInternalServerError)
-	}
-
-	//	создаём файл с таким же именем
-	dst, err := root.Create(handler.Filename)
-	if err != nil {
-		http.Error(w, "ошибка при создании файла", http.StatusInternalServerError)
-		return
-	}
-	defer dst.Close()
-
-	// копируем содержимое загруженного файла в новый файл
-	_, err = io.Copy(dst, file)
-	if err != nil {
-		http.Error(w, "ошибка при записи файла", http.StatusInternalServerError)
-		return
 	}
 }
